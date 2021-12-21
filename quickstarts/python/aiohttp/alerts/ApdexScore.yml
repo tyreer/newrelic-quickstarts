@@ -2,7 +2,7 @@
 name: Apdex Score
 
 details: |+
-  This alert is triggered when the Apdex score is below 0.5 for 5 minutes
+  This alert is triggered when the Apdex score is below 0.5 for 5 minutes!
 type: STATIC
 nrql:
   query: "SELECT apdex(apm.service.apdex) as 'Apdex' FROM Metric WHERE appName like '%'"
