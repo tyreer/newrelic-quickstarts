@@ -1,8 +1,8 @@
 # Name of the quickstart (required)
-name: robert-other-test-quickstart
+name: template-quickstart
 
 # Displayed in the UI (required)
-title: Robert's other test quickstart
+title: Template Quickstart
 
 # Long-form description of the quickstart (required)
 description: |
@@ -29,7 +29,7 @@ keywords:
 # Reference to install plans located under /install directory
 # Allows us to construct reusable "install plans" and just use their ID in the quickstart config
 installPlans:
-  - infra-agent-standard
+  - infra-agent-targeted
 
 documentation:
   - name: Installation Docs
