@@ -1,17 +1,24 @@
 'use strict';
-
+const path = require('path');
 const {
   fetchPaginatedGHResults,
   filterQuickstartConfigFiles,
+  filterOutTestFiles,
 } = require('./github-api-helpers');
-const { findMainInstallConfigFiles, readQuickstartFile } = require('./helpers');
-const path = require('path');
+const {
+  findMainInstallConfigFiles,
+  readQuickstartFile,
+  pathsToSanitize,
+} = require('./helpers');
 
-const url = process.argv[2];
+const url = pathsToSanitize[0];
 
+/**
+ * Gets all install plain ids under installs/ dir
+ * @returns {Array} Array of unique install plan ids
+ */
 const getAllInstallPlanIds = () => {
-  const configPaths = findMainInstallConfigFiles();
-  return configPaths.reduce((acc, filePath) => {
+  return findMainInstallConfigFiles().reduce((acc, filePath) => {
     const { contents } = readQuickstartFile(filePath);
 
     const { id } = contents[0];
@@ -19,6 +26,11 @@ const getAllInstallPlanIds = () => {
   }, []);
 };
 
+/**
+ * Gets all the install plans and paths for an array of config files
+ * @param {Array} configFiles - Array of config files
+ * @returns {{filePath: string, installPlans: Array}[]} Array of paths and install plans for file
+ */
 const getConfigInstallPlans = (configFiles) => {
   return configFiles.map(({ filename }) => {
     const filePath = path.join(process.cwd(), `../${filename}`);
@@ -28,8 +40,14 @@ const getConfigInstallPlans = (configFiles) => {
   });
 };
 
-const getInstallPlansNoMatches = (files, installPlanIds) => {
-  return files
+/**
+ * Gets all the install plans and paths for an array of config files
+ * @param {{filePath, installPlans}[]} configInstallPlanFiles - Array of objects with path and install plans for file
+ * @param {String[]} installPlanIds - Array of install plan ids
+ * @returns {{filePath, installPlans}[]} Array of paths and install plans for file
+ */
+const getInstallPlansNoMatches = (configInstallPlanFiles, installPlanIds) => {
+  return configInstallPlanFiles
     .map(({ installPlans, filePath }) => {
       const nonExistentInstallPlans = installPlans.filter(
         (plan) => !installPlanIds.includes(plan)
@@ -39,29 +57,32 @@ const getInstallPlansNoMatches = (files, installPlanIds) => {
     .filter(({ installPlans }) => installPlans.length > 0);
 };
 
-const validateInstallPlanIds = (files) => {
-  const configFiles = filterQuickstartConfigFiles(files);
+/**
+ * Gets all the install plans and paths for an array of config files
+ * @param {Array} githubFiles - Array of results from Github API
+ */
+const validateInstallPlanIds = (githubFiles) => {
+  const configFiles = filterQuickstartConfigFiles(githubFiles);
 
-  const configInstallPlans = getConfigInstallPlans(configFiles);
+  const configInstallPlansFiles = getConfigInstallPlans(configFiles);
+
   const installPlanIds = getAllInstallPlanIds();
 
   const installPlanNoMatches = getInstallPlansNoMatches(
-    configInstallPlans,
+    configInstallPlansFiles,
     installPlanIds
   );
 
   if (installPlanNoMatches.length > 0) {
     console.error(
-      `ERROR: Found install plans with no corresponding install plan id.`
+      `ERROR: Found install plans with no corresponding install plan id.\n`
     );
-    console.error(
-      `An install plan id must match an existing install plan id.\n`
-    );
+    console.error(`An install plan id must match an existing install plan id.`);
     installPlanNoMatches.forEach((m) =>
-      console.error(`${m.installPlans.join(', ')} in ${m.filePath}\n`)
+      console.error(`- ${m.installPlans.join(', ')} in ${m.filePath}`)
     );
     console.error(
-      `Please change to an existing install plan id or remove the ids.`
+      `\nPlease change to an existing install plan id or remove the ids.`
     );
 
     if (require.main === module) {
@@ -72,7 +93,7 @@ const validateInstallPlanIds = (files) => {
 
 const main = async () => {
   const files = await fetchPaginatedGHResults(url, process.env.GITHUB_TOKEN);
-  validateInstallPlanIds(files);
+  validateInstallPlanIds(filterOutTestFiles(files));
 };
 
 if (require.main === module) {
