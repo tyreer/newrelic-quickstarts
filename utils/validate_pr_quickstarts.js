@@ -41,21 +41,33 @@ mutation (
 `;
 /**
  * Because brand new quickstarts added via a PR do not have an ID until they are assigned one at release,
- * this mock UUID allows for validation to take place knowing a different UUID will be used for the actual release
+ * this mock UUID allows for validation to take place knowing a different UUID will be used for the actual release.
  */
 const MOCK_UUID = '00000000-0000-0000-0000-000000000000';
 
 /**
- * Gets the quickstart portion of a given file path.
+ * Gets the unique base quickstart directory from a given file path.
+ * e.g. filePath: 'quickstarts/python/aiohttp/alerts/ApdexScore.yml' + targetChild: 'alerts' = 'python/aiohttp'.
  * @param {String} filePath - Full file path of a file in a quickstart.
- * @param {String} targetChild - Node in file path that should be preceded by a quickstart directory.
+ * @param {String} targetChild - Node in file path that should be preceded by a base quickstart directory.
  * @return {String} Node in file path of the quickstart.
  */
 const getQuickstartNode = (filePath, targetChild) => {
   const splitFilePath = filePath.split('/');
-  return splitFilePath[
-    splitFilePath.findIndex((path) => path === targetChild) - 1
-  ];
+
+  const baseQuickstartDirectoryIndex =
+    splitFilePath.findIndex((path) => path === targetChild) - 1;
+
+  let uniqueQuickstartDirectory = splitFilePath[baseQuickstartDirectoryIndex];
+  let indexCounter = baseQuickstartDirectoryIndex;
+
+  while (indexCounter > 1) {
+    uniqueQuickstartDirectory = splitFilePath[indexCounter - 1].concat(
+      `/${uniqueQuickstartDirectory}`
+    );
+    indexCounter--;
+  }
+  return uniqueQuickstartDirectory;
 };
 
 /**
@@ -93,15 +105,18 @@ const getQuickstartFromFilename = (filePath) => {
 const getQuickstartConfigPaths = (quickstartDirectories) => {
   const allQuickstartConfigPaths = findMainQuickstartConfigFiles();
 
-  return [...quickstartDirectories].reduce((acc, quickstartDirectory) => {
-    const match = allQuickstartConfigPaths.find((path) =>
-      path.split('/').includes(quickstartDirectory)
-    );
-    if (match) {
-      acc.push(match);
-    }
-    return acc;
-  }, []);
+  return Array.from(quickstartDirectories).reduce(
+    (acc, quickstartDirectory) => {
+      const match = allQuickstartConfigPaths.find((path) =>
+        path.includes(`/${quickstartDirectory}/`)
+      );
+      if (match) {
+        acc.push(match);
+      }
+      return acc;
+    },
+    []
+  );
 };
 
 /**
