@@ -85,7 +85,7 @@ const expectedMockQuickstart2MutationInput = {
   id: 'mock-2-id',
   quickstartMetadata: {
     authors: [{ name: 'John Smith' }],
-    categoryTerms: ['list', 'of', 'searchable', 'keywords'],
+    categoryTerms: undefined,
     description:
       'The template quickstart allows you to get visibility into the performance and available of your example service and dependencies. Use this quickstart together with the mock up integrations.',
     displayName: 'Template Quickstart',
@@ -142,7 +142,7 @@ const expectedMockQuickstart2MutationInput = {
 };
 
 const expectedMockQuickstart4MutationInput = {
-  id: undefined,
+  id: '00000000-0000-0000-0000-000000000000',
   quickstartMetadata: {
     sourceUrl:
       'https://github.com/newrelic/newrelic-quickstarts/tree/main/utils/mock_files/mock-quickstart-4',
